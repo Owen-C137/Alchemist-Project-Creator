@@ -1,4 +1,9 @@
 
+## Disclaimer
+
+This application was developed with ChatGPT
+
+
 # Alchemist Project Creator
 
 A small tool to quickly create a project file for Alchemist by Scobalula.
