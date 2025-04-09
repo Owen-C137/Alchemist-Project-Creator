@@ -8,7 +8,7 @@ This application was developed with ChatGPT
 
 A small tool to quickly create a project file for Alchemist by Scobalula.
 
-## Requirements
+## Requirements to build from source
 
 Before installing and running the tool, ensure you have the following packages installed:
 
