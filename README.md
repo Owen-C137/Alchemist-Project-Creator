@@ -1,3 +1,4 @@
+```markdown
 # Alchemist Project Creator
 
 A small tool to quickly create a project file for Alchemist by Scobalula.
@@ -6,8 +7,10 @@ A small tool to quickly create a project file for Alchemist by Scobalula.
 
 Before installing and running the tool, ensure you have the following packages installed:
 
-pip install PyQt5 pip install qtmodern
-
+```bash
+pip install PyQt5
+pip install qtmodern
+```
 
 ## Overview
 
@@ -33,8 +36,10 @@ When adding to the mapping editor, the tool expects inputs in a specific format.
 
 ### Example Format
 
-Key Values: walk_offset_additive,walk_to_sprint sprint_in,1,1
-
+```text
+Key                                 Values:
+walk_offset_additive,walk_to_sprint sprint_in,1,1
+```
 
 ### Breakdown
 
@@ -64,6 +69,4 @@ Key Values: walk_offset_additive,walk_to_sprint sprint_in,1,1
 
 If you have suggestions, encounter issues, or want to add new features, please feel free to raise an issue or contribute via pull requests.
 
----
 
-Feel free to modify and extend this README to best suit your project needs.
