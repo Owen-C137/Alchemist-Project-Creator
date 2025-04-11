@@ -1,17 +1,22 @@
-import sys, os, json, random, re, time
-from typing import Any, Dict, List
+import sys
+import os
+import json
+import random
+import re
+import time
 import traceback
+from typing import Any, Dict, List
 
+# Consolidated PyQt5 imports.
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFrame,
     QPushButton, QSizePolicy, QLabel, QListWidget, QListWidgetItem, QMenu,
     QLineEdit, QFileDialog, QMessageBox, QStatusBar, QAction, QFormLayout,
     QCheckBox, QDockWidget, QPlainTextEdit, QTableWidget, QTableWidgetItem,
-    QInputDialog, QProgressDialog, QSizePolicy, QPushButton
+    QInputDialog, QProgressDialog, QAbstractItemView
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QSize
 from PyQt5.QtGui import QFontMetrics, QIcon
-from PyQt5.QtWidgets import QAbstractItemView
 
 import qtmodern.styles
 import qtmodern.windows
@@ -26,8 +31,8 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "EnableLeftHandIK": True,
     "EnableRightHandIK": True,
     "UseExperimentalFeatures": True,
-    "LeftIKTargetBoneName": "",
-    "RightIKTargetBoneName": ""
+    "LeftIKTargetBoneName": "tag_ik_loc_le",
+    "RightIKTargetBoneName": "tag_ik_loc_ri"
 }
 
 # Default mapping entries.
@@ -58,7 +63,6 @@ DEFAULT_MAPPING: Dict[str, Any] = {
 ###############################################################################
 class ConfigManager:
     """Handles loading and saving of configuration and mapping files."""
-
     def __init__(self, config_file: str = CONFIG_FILE, mapping_file: str = MAPPING_FILE) -> None:
         self.config_file = config_file
         self.mapping_file = mapping_file
@@ -112,11 +116,10 @@ class ConfigManager:
 ###############################################################################
 # Mapping Editor Dialog (View for Mapping Management)
 ###############################################################################
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog  # Imported here since this view is separate.
 
 class MappingEditorDialog(QDialog):
     """Dialog for editing animation mapping entries."""
-
     def __init__(self, config_manager: ConfigManager, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Mapping Editor")
@@ -124,13 +127,14 @@ class MappingEditorDialog(QDialog):
         self.resize(500, 300)
         layout = QVBoxLayout(self)
 
+        # Table for mappings.
         self.table = QTableWidget()
         self.table.setColumnCount(2)
         self.table.setHorizontalHeaderLabels(["Key", "Values (comma-separated)"])
         layout.addWidget(self.table)
         self.load_table()
 
-        # Buttons for CRUD operations
+        # Buttons for CRUD operations.
         button_layout = QHBoxLayout()
         self.add_button = QPushButton("Add")
         self.edit_button = QPushButton("Edit")
@@ -144,13 +148,14 @@ class MappingEditorDialog(QDialog):
         button_layout.addWidget(self.export_button)
         layout.addLayout(button_layout)
 
+        # Connect button signals.
         self.add_button.clicked.connect(self.add_entry)
         self.edit_button.clicked.connect(self.edit_entry)
         self.remove_button.clicked.connect(self.remove_entry)
         self.import_button.clicked.connect(self.import_mappings)
         self.export_button.clicked.connect(self.export_mappings)
 
-        # Tooltips for help.
+        # Set tooltips.
         self.add_button.setToolTip("Add a new mapping entry.")
         self.edit_button.setToolTip("Edit the selected mapping entry.")
         self.remove_button.setToolTip("Remove the selected mapping entry.")
@@ -255,7 +260,6 @@ class MappingEditorDialog(QDialog):
 ###############################################################################
 class DragDropBox(QFrame):
     """A drop area for single file types (e.g., idle, left pose, skeleton, etc.)."""
-
     def __init__(self, filetype: str, config_key: str, update_callback, placeholder: str = "") -> None:
         super().__init__()
         self.setAcceptDrops(True)
@@ -319,7 +323,6 @@ class DragDropBox(QFrame):
 
 class AnimationDropArea(QFrame):
     """A drop area for additive animations with internal reordering support."""
-
     def __init__(self, update_callback, initial_files: List[str] = None) -> None:
         super().__init__()
         self.setAcceptDrops(True)
@@ -327,7 +330,7 @@ class AnimationDropArea(QFrame):
         self.setStyleSheet("""
             QFrame {
                 background-color: #1e1e1e;
-                border: 1px dashed #555;
+                border: 1e1e1e dashed #555;
                 border-radius: 6px;
             }
             QListWidget {
@@ -347,7 +350,6 @@ class AnimationDropArea(QFrame):
         self.list_widget = QListWidget()
         self.list_widget.setStyleSheet("padding: 5px;")
         self.list_widget.setSelectionMode(QListWidget.ExtendedSelection)
-        # Enable reordering via drag and drop.
         self.list_widget.setDragDropMode(QAbstractItemView.InternalMove)
         self.list_widget.setContextMenuPolicy(Qt.CustomContextMenu)
         self.list_widget.customContextMenuRequested.connect(self.show_context_menu)
@@ -415,7 +417,6 @@ class AnimationDropArea(QFrame):
 
 class NormalAnimationDropArea(QFrame):
     """A drop area for normal animations with drag and drop reordering."""
-
     def __init__(self, update_callback, initial_files: List[str] = None) -> None:
         super().__init__()
         self.setAcceptDrops(True)
@@ -423,7 +424,7 @@ class NormalAnimationDropArea(QFrame):
         self.setStyleSheet("""
             QFrame {
                 background-color: #1e1e1e;
-                border: 1px dashed #555;
+                border: 1e1e1e dashed #555;
                 border-radius: 6px;
             }
             QListWidget {
@@ -558,6 +559,7 @@ class ProjectCreator(QThread):
             self.log_message.emit("Starting project file creation...")
             self.progress_changed.emit(10)
 
+            # Retrieve required file paths from configuration.
             idle = self.config.get("idle_anim")
             left = self.config.get("left_pose")
             right = self.config.get("right_pose")
@@ -565,6 +567,10 @@ class ProjectCreator(QThread):
             anims = self.config.get("animations", [])
             normal_anims = self.config.get("normal_anims", [])
             output_path = self.config.get("output_path")
+
+            # Global IK override values.
+            global_left = self.config.get("LeftIKTargetBoneName", "").strip()
+            global_right = self.config.get("RightIKTargetBoneName", "").strip()
 
             if not all([idle, left, right, skel, output_path]):
                 self.error_occurred.emit("Missing one or more required files or output path.")
@@ -612,10 +618,6 @@ class ProjectCreator(QThread):
                         "Type": types[idx] if idx < len(types) else types[-1]
                     })
 
-                enable_left_hand_ik = (idle_settings["EnableLeftHandIK"] 
-                                       if map_key not in ["slide_loop,slide_loop_rhand", "super_sprint_offset_additive,super_sprint_loop"]
-                                       else False)
-
                 anim_entries.append({
                     "$id": entry_id,
                     "OutputFramerate": idle_settings["OutputFramerate"],
@@ -623,13 +625,13 @@ class ProjectCreator(QThread):
                     "OutputName": final_name,
                     "OutputFolder": output_path,
                     "SkeletonPath": skel,
-                    "EnableLeftHandIK": enable_left_hand_ik,
+                    "EnableLeftHandIK": idle_settings["EnableLeftHandIK"],
                     "EnableRightHandIK": idle_settings["EnableRightHandIK"],
                     "UseExperimentalFeatures": idle_settings["UseExperimentalFeatures"],
                     "LeftHandPoseFile": left,
                     "RightHandPoseFile": right,
-                    "LeftIKTargetBoneName": idle_settings["LeftIKTargetBoneName"],
-                    "RightIKTargetBoneName": idle_settings["RightIKTargetBoneName"],
+                    "LeftIKTargetBoneName": global_left if global_left else idle_settings["LeftIKTargetBoneName"],
+                    "RightIKTargetBoneName": global_right if global_right else idle_settings["RightIKTargetBoneName"],
                     "Layers": {
                         "$id": layer_id,
                         "$values": layer_values
@@ -656,7 +658,7 @@ class ProjectCreator(QThread):
                 anim_entry = {
                     "$id": entry_id,
                     "OutputFramerate": settings["OutputFramerate"],
-                    "Name": norm_anim,
+                    "Name": idle,
                     "OutputName": output_name,
                     "OutputFolder": output_path,
                     "SkeletonPath": skel,
@@ -665,8 +667,8 @@ class ProjectCreator(QThread):
                     "UseExperimentalFeatures": settings["UseExperimentalFeatures"],
                     "LeftHandPoseFile": left,
                     "RightHandPoseFile": right,
-                    "LeftIKTargetBoneName": settings["LeftIKTargetBoneName"],
-                    "RightIKTargetBoneName": settings["RightIKTargetBoneName"],
+                    "LeftIKTargetBoneName": global_left if global_left else settings["LeftIKTargetBoneName"],
+                    "RightIKTargetBoneName": global_right if global_right else settings["RightIKTargetBoneName"],
                     "Layers": {
                         "$id": layer_id,
                         "$values": [layer_entry]
@@ -689,8 +691,8 @@ class ProjectCreator(QThread):
                     "UseExperimentalFeatures": idle_settings["UseExperimentalFeatures"],
                     "LeftHandPoseFile": left,
                     "RightHandPoseFile": right,
-                    "LeftIKTargetBoneName": idle_settings["LeftIKTargetBoneName"],
-                    "RightIKTargetBoneName": idle_settings["RightIKTargetBoneName"],
+                    "LeftIKTargetBoneName": global_left if global_left else idle_settings["LeftIKTargetBoneName"],
+                    "RightIKTargetBoneName": global_right if global_right else idle_settings["RightIKTargetBoneName"],
                     "Layers": {
                         "$id": str(id_counter + 1),
                         "$values": []
@@ -738,12 +740,12 @@ class ProjectCreator(QThread):
 ###############################################################################
 # Main Application Window (View + Controller)
 ###############################################################################
-
 class DefaultWidthButton(QPushButton):
     def sizeHint(self):
         hint = super().sizeHint()
         # Return a QSize with 800 as the preferred width.
         return hint.expandedTo(QSize(800, hint.height()))
+
 
 class AlchemistAdditiveApp(QMainWindow):
     """Main window for the Additive Animation Creator application."""
@@ -793,6 +795,31 @@ class AlchemistAdditiveApp(QMainWindow):
         self.output_selector = OutputPathSelector(self.config_manager.config.get("output_path", ""), self.update_config)
         main_layout.addWidget(self.output_selector)
 
+        # ---------------------------------------------------------------------------
+        # Added Global IK Override text boxes (placed below output path selector)
+        ik_override_layout = QHBoxLayout()
+
+        left_ik_layout = QVBoxLayout()
+        left_ik_label = QLabel("Left IK Global Override")
+        self.left_ik_text = QLineEdit()
+        self.left_ik_text.setToolTip("Enter a global override for Left IK Target Bone Name.")
+        self.left_ik_text.textChanged.connect(lambda text: self.update_config("LeftIKTargetBoneName", text))
+        left_ik_layout.addWidget(left_ik_label)
+        left_ik_layout.addWidget(self.left_ik_text)
+
+        right_ik_layout = QVBoxLayout()
+        right_ik_label = QLabel("Right IK Global Override")
+        self.right_ik_text = QLineEdit()
+        self.right_ik_text.setToolTip("Enter a global override for Right IK Target Bone Name.")
+        self.right_ik_text.textChanged.connect(lambda text: self.update_config("RightIKTargetBoneName", text))
+        right_ik_layout.addWidget(right_ik_label)
+        right_ik_layout.addWidget(self.right_ik_text)
+
+        ik_override_layout.addLayout(left_ik_layout)
+        ik_override_layout.addLayout(right_ik_layout)
+        main_layout.addLayout(ik_override_layout)
+        # ---------------------------------------------------------------------------
+
         # Upper row for idle, skeleton, and pose files.
         h_layout = QHBoxLayout()
         self.idle_box = DragDropBox("seanim", "idle_anim", self.update_config, "Drag Idle Animation \n(.seanim)")
@@ -834,8 +861,6 @@ class AlchemistAdditiveApp(QMainWindow):
         self.create_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         main_layout.addWidget(self.create_button, alignment=Qt.AlignCenter)
 
-
-
         # Integrated logging dock.
         self.init_logging_dock()
 
@@ -857,10 +882,13 @@ class AlchemistAdditiveApp(QMainWindow):
         self.log_message("Opened mapping editor.")
 
     def show_about(self) -> None:
-        QMessageBox.information(self, "About",
+        QMessageBox.information(
+            self,
+            "About",
             "BO3 Additive Animation Creator\nVersion 1.0\nCreated with PyQt5 and qtmodern.\n\n"
             "All credit goes to Scobalula for creating Alchemist.\n\n"
-            "This version includes enhanced UI, logging, mapping editing, and multi-threaded processing.")
+            "This version includes enhanced UI, logging, mapping editing, and multi-threaded processing."
+        )
         self.log_message("Displayed About information.")
 
     def update_config(self, key: str, value: Any) -> None:
@@ -875,6 +903,11 @@ class AlchemistAdditiveApp(QMainWindow):
             if saved_path and os.path.exists(saved_path):
                 box.set_filename_display(os.path.basename(saved_path))
                 self.log_message(f"Populated field {box.config_key}: {saved_path}")
+        # Set the global IK override fields if already defined.
+        left_override = self.config_manager.config.get("LeftIKTargetBoneName", "")
+        right_override = self.config_manager.config.get("RightIKTargetBoneName", "")
+        self.left_ik_text.setText(left_override)
+        self.right_ik_text.setText(right_override)
 
     def on_animation_item_clicked(self, file_path: str) -> None:
         self.selected_anim_file = file_path
@@ -882,9 +915,12 @@ class AlchemistAdditiveApp(QMainWindow):
         self.log_message(f"Selected animation: {file_path}")
 
     def reset_configuration(self) -> None:
-        reply = QMessageBox.question(self, "Reset Configuration",
-                                     "Are you sure you want to reset the configuration? This cannot be undone.",
-                                     QMessageBox.Yes | QMessageBox.No)
+        reply = QMessageBox.question(
+            self,
+            "Reset Configuration",
+            "Are you sure you want to reset the configuration? This cannot be undone.",
+            QMessageBox.Yes | QMessageBox.No
+        )
         if reply == QMessageBox.Yes:
             if os.path.exists(CONFIG_FILE):
                 try:
